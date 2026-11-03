@@ -1,3 +1,6 @@
+import base64
+from pathlib import Path
+
 import streamlit as st
 
 # ---------------------------------------------------------------
@@ -141,6 +144,19 @@ label, .stRadio label {{ color: {ESPRESSO} !important; }}
 )
 
 
+IMAGEN = Path(__file__).parent / "sudadera_lisa.png"
+
+
+def cargar_imagen(ruta: Path):
+    """Devuelve la imagen en base64 para incrustarla en el HTML, o None si no existe."""
+    if ruta.exists():
+        return base64.b64encode(ruta.read_bytes()).decode()
+    return None
+
+
+IMAGEN_B64 = cargar_imagen(IMAGEN)
+
+
 def dibujar_sudadera(color: str) -> str:
     """Sudadera lisa en SVG, sin logo, del color elegido."""
     return f"""
@@ -204,7 +220,10 @@ with col_info:
         unsafe_allow_html=True,
     )
 
-    color_nombre = st.radio("Color", list(PRODUCTO["colores"].keys()), horizontal=True)
+    if IMAGEN_B64:
+        color_nombre = "Único"
+    else:
+        color_nombre = st.radio("Color", list(PRODUCTO["colores"].keys()), horizontal=True)
     talla = st.radio("Talla", PRODUCTO["tallas"], horizontal=True)
     cantidad = st.number_input("Cantidad", min_value=1, max_value=10, value=1, step=1)
 
@@ -229,10 +248,17 @@ with col_info:
     )
 
 with col_img:
-    st.markdown(
-        f"<div class='vitrina'>{dibujar_sudadera(PRODUCTO['colores'][color_nombre])}</div>",
-        unsafe_allow_html=True,
-    )
+    if IMAGEN_B64:
+        st.markdown(
+            f"<div class='vitrina'><img src='data:image/png;base64,{IMAGEN_B64}' "
+            f"alt='Sudadera lisa' style='max-width:100%; height:auto;'></div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"<div class='vitrina'>{dibujar_sudadera(PRODUCTO['colores'][color_nombre])}</div>",
+            unsafe_allow_html=True,
+        )
 
 # ---------- Bolsa ----------
 if st.session_state.carrito:
